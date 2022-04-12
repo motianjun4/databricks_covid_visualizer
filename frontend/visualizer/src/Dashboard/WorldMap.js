@@ -10,36 +10,35 @@ import {
 import { scaleLinear } from "d3-scale";
 import faker from "@faker-js/faker";
 import ReactTooltip from "react-tooltip";
+import axios from "axios";
 
 const geoUrl =
   "https://raw.githubusercontent.com/zcreativelabs/react-simple-maps/master/topojson-maps/world-110m.json";
 
-const colorScale = scaleLinear()
-  .domain([0, 10000])
-  .range(["#ffedea", "#ff5233"]);
+
 
 const WorldMap = () => {
   const [content, setContent] = useState("");
   const [caseData, setCaseData] = useState({});
+  const [maxCases, setMaxCases] = useState(100000);
+
+  const colorScale = scaleLinear()
+    .domain([0, maxCases])
+    .range(["#ffedea", "#ff5233"]);
 
   const getRegionNames = async () => {
-    try {
-      const res = await fetch(geoUrl);
-      if (!res.ok) {
-        throw Error(res.statusText);
-      }
-      let j = await res.json();
-      let keys = j.objects.ne_110m_admin_0_countries.geometries.map(
-        (item) => item.properties.ISO_A3
-      );
-      let caseData = {};
-      keys.forEach((item) => {
-        caseData[item] = faker.datatype.number(10000);
-      });
-      setCaseData(caseData);
-    } catch (error) {
-      console.log("There was a problem when fetching the data: ", error);
-    }
+    let resp = await axios.get("/api/covid_data");
+    let data = resp.data.covid_by_region;
+    let maxCases = 0;
+    var dataObj = {}
+    data.forEach(element => {
+      // console.log(element)
+      dataObj[element.iso_code] = element.daily_new_cases;
+      maxCases = Math.max(maxCases, element.daily_new_cases? element.daily_new_cases: 0);
+    })
+    // console.log(maxCases)
+    setMaxCases(maxCases);
+    setCaseData(dataObj);
   };
 
   useEffect(()=>{
@@ -54,25 +53,23 @@ const WorldMap = () => {
           scale: 147,
         }}
         data-tip=""
+        height={350}
       >
         <ZoomableGroup zoom={1}>
           <Sphere stroke="#E4E5E6" strokeWidth={0.5} />
           <Graticule stroke="#E4E5E6" strokeWidth={0.5} />
           <Geographies geography={geoUrl}>
-            {({ geographies }) =>
-            {
-              console.log(geographies, "geogra")
+            {({ geographies }) => {
+              // console.log(geographies, "geogra");
               return geographies.map((geo) => {
-                // console.log(geo.properties.ISO_A3);
                 const d = caseData[geo.properties.ISO_A3];
-                // console.log(d)
                 return (
                   <Geography
                     key={geo.rsmKey}
                     geography={geo}
                     style={{
                       default: {
-                        fill:d ? colorScale(d) : "#F5F4F6",
+                        fill: d ? colorScale(d) : "#F5F4F6",
                         outline: "none",
                       },
                       hover: {
@@ -80,7 +77,6 @@ const WorldMap = () => {
                         outline: "none",
                       },
                     }}
-                    
                     onMouseEnter={() => {
                       const { NAME } = geo.properties;
                       setContent(`${NAME} — ${d ? d : "Unknown"}`);
@@ -90,9 +86,8 @@ const WorldMap = () => {
                     }}
                   />
                 );
-              })
-            }
-            }
+              });
+            }}
           </Geographies>
         </ZoomableGroup>
       </ComposableMap>
