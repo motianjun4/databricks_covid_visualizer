@@ -1,7 +1,8 @@
-# Databricks COVID Visualizer
-In this project, We utilized Databricks to process the COVID dataset. A Spark job has been set up to process the data periodically to generate a dashboard to show the daily COVID cases.
+# Databricks COVID-19 Visualizer
+In this project, We utilized Databricks to process the COVID dataset. A Spark job has been set up to process the data periodically to generate the processed data to show the daily COVID-19 cases.
 
-Demo link: https://covid.tinchun.top/
+Demo Video: https://youtu.be/RgQY-8MxdnA    
+Demo link: https://covid.tinchun.top/    
 
 For the data processing code, you can check out [COVID.sql](./COVID.sql) for more detail.
 
